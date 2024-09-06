@@ -21,7 +21,7 @@ class UserEngagement:
         """
         Initializes the UserEngagement class with the provided DataFrame.
         
-        :param df: DataFrame containing columns like 'MSISDN/Number', 'Dur. (ms)', 'Total DL (Bytes)', and 'Total UL (Bytes)'.
+        :param df: DataFrame containing columns like 'MSISDN/Number', 'Dur.(s)', 'Total DL (Bytes)', and 'Total UL (Bytes)'.
         """
         self.df = df
 
@@ -31,7 +31,7 @@ class UserEngagement:
         
         Metrics:
             - Sessions frequency: Count of sessions per user.
-            - Total session duration: Sum of 'Dur. (ms)' per user.
+            - Total session duration: Sum of 'Dur.(s)' per user.
             - Total data traffic: Sum of 'Total DL (Bytes)' + 'Total UL (Bytes)' per user.
         
         :return: DataFrame containing aggregated metrics for each user.
@@ -39,12 +39,12 @@ class UserEngagement:
         # Aggregate metrics by MSISDN/Number
         user_metrics = self.df.groupby('MSISDN/Number').agg({
             'MSISDN/Number': 'count',  # Sessions frequency
-            'Dur. (ms)': 'sum',  # Total session duration
+            'Dur.(s)': 'sum',  # Total session duration
             'Total DL (Bytes)': 'sum',  # Total download traffic
             'Total UL (Bytes)': 'sum'  # Total upload traffic
         }).rename(columns={
             'MSISDN/Number': 'Sessions Frequency',
-            'Dur. (ms)': 'Total Session Duration (ms)',
+            'Dur.(s)': 'Total Session Duration (s)',
             'Total DL (Bytes)': 'Total Download (Bytes)',
             'Total UL (Bytes)': 'Total Upload (Bytes)'
         })
@@ -58,7 +58,7 @@ class UserEngagement:
         """
         Reports the top N customers per engagement metric:
             - Sessions Frequency
-            - Total Session Duration (ms)
+            - Total Session Duration (s)
             - Total Traffic (Bytes)
         
         :param n: Number of top customers to return, default is 10.
@@ -69,7 +69,7 @@ class UserEngagement:
 
         # Sort and get top N customers for each metric
         top_sessions = user_metrics.sort_values('Sessions Frequency', ascending=False).head(n)
-        top_duration = user_metrics.sort_values('Total Session Duration (ms)', ascending=False).head(n)
+        top_duration = user_metrics.sort_values('Total Session Duration (s)', ascending=False).head(n)
         top_traffic = user_metrics.sort_values('Total Traffic (Bytes)', ascending=False).head(n)
 
         # Return the top N customers for each metric
@@ -90,7 +90,7 @@ class UserEngagement:
 
         # Aggregate per customer the three metrics
         user_metrics = self.df.groupby('MSISDN/Number').agg({
-            'Dur. (ms)': 'sum',  # Total session duration
+            'Dur.(s)': 'sum',  # Total session duration
             'Total DL (Bytes)': 'sum',  # Total download data
             'Total UL (Bytes)': 'sum',  # Total upload data
             'MSISDN/Number': 'count'  # Session frequency
@@ -98,7 +98,7 @@ class UserEngagement:
 
         # Calculate total session traffic (DL + UL)
         user_metrics['Total Traffic (Bytes)'] = user_metrics['Total DL (Bytes)'] + user_metrics['Total UL (Bytes)']
-        user_metrics.rename(columns={'MSISDN/Number': 'Sessions Frequency', 'Dur. (ms)': 'Session Duration'}, inplace=True)
+        user_metrics.rename(columns={'MSISDN/Number': 'Sessions Frequency', 'Dur.(s)': 'Session Duration'}, inplace=True)
 
         # Normalize the data
         scaler = StandardScaler()
@@ -274,7 +274,7 @@ class UserEngagement:
         """
         # Aggregate per customer the required metrics
         user_metrics = self.df.groupby('MSISDN/Number').agg({
-            'Dur. (ms)': 'sum',  # Total session duration
+            'Dur.(s)': 'sum',  # Total session duration
             'Total DL (Bytes)': 'sum',  # Total download data
             'Total UL (Bytes)': 'sum',  # Total upload data
             'MSISDN/Number': 'count'  # Session frequency
@@ -282,7 +282,7 @@ class UserEngagement:
         
         # Calculate total session traffic (DL + UL)
         user_metrics['Total Traffic (Bytes)'] = user_metrics['Total DL (Bytes)'] + user_metrics['Total UL (Bytes)']
-        user_metrics.rename(columns={'MSISDN/Number': 'Sessions Frequency', 'Dur. (ms)': 'Session Duration'}, inplace=True)
+        user_metrics.rename(columns={'MSISDN/Number': 'Sessions Frequency', 'Dur.(s)': 'Session Duration'}, inplace=True)
 
         metrics = ['Sessions Frequency', 'Session Duration', 'Total Traffic (Bytes)']
 

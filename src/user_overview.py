@@ -27,6 +27,7 @@ class UserOverview:
         Returns:
         pd.DataFrame: DataFrame with descriptive statistics for numerical columns.
         """
+        
         return self.df.describe()
     
     def plot_top_handset_types(self):
@@ -106,14 +107,14 @@ class UserOverview:
         Returns:
         pd.DataFrame: DataFrame with decile classes and total data (DL+UL) per decile.
         """
-        # Ensure 'Dur. (ms)' is numeric
-        self.df['Dur. (ms)'] = pd.to_numeric(self.df['Dur. (ms)'], errors='coerce')
+        # Ensure 'Dur.(s)' is numeric
+        self.df['Dur.(s)'] = pd.to_numeric(self.df['Dur.(s)'], errors='coerce')
         
         # Calculate total duration per user
-        user_durations = self.df.groupby('MSISDN/Number')['Dur. (ms)'].sum().reset_index()
+        user_durations = self.df.groupby('MSISDN/Number')['Dur.(s)'].sum().reset_index()
         
         # Segment users into decile classes
-        user_durations['Decile'] = pd.qcut(user_durations['Dur. (ms)'], 10, labels=False) + 1
+        user_durations['Decile'] = pd.qcut(user_durations['Dur.(s)'], 10, labels=False) + 1
         
         # Merge decile information back into the original DataFrame
         df_with_decile = pd.merge(self.df, user_durations[['MSISDN/Number', 'Decile']], on='MSISDN/Number')
@@ -144,8 +145,10 @@ class UserOverview:
         """
         # Select only quantitative variables except ignored (numeric types)
         colums_ignored = ['Bearer Id', 'IMSI', 'MSISDN/Number', 'IMEI']
-        quantitative_df = self.df.select_dtypes(include=[np.number])
-        quantitative_df.drop(colums_ignored, axis=1, inplace=True)
+        columns_picked = ['Dur.(s)', 'Total DL (Bytes)', 'Total UL (Bytes)']
+        # quantitative_df = self.df.select_dtypes(include=[np.number])
+        # quantitative_df.drop(colums_ignored, axis=1, inplace=True)
+        quantitative_df = self.df[columns_picked]
         # Compute dispersion parameters
         analysis_df = pd.DataFrame({
             'Mean': quantitative_df.mean(),
@@ -167,9 +170,11 @@ class UserOverview:
         None
         """
        # Select only quantitative variables except ignored (numeric types)
-        colums_ignored = ["Dur. (ms).1"]
-        quantitative_df = self.df.select_dtypes(include=[np.number])
-        quantitative_df.drop(colums_ignored, axis=1, inplace=True)
+        # colums_ignored = ["Dur.(s)"]
+        # quantitative_df = self.df.select_dtypes(include=[np.number])
+        # quantitative_df.drop(colums_ignored, axis=1, inplace=True)
+        columns_picked = ['Dur.(s)', 'Total DL (Bytes)', 'Total UL (Bytes)']
+        quantitative_df = self.df[columns_picked]
         
         try:
             plt.style.use('dark_background')
@@ -284,7 +289,7 @@ class UserOverview:
             dict: A dictionary containing PCA results, explained variance ratio, and loadings.
         """
         # Select numerical columns for PCA
-        colums_ignored = ['Bearer Id', 'IMSI', 'MSISDN/Number', 'IMEI','Start ms','End ms',"Dur. (ms).1"]
+        colums_ignored = ['Bearer Id', 'IMSI', 'MSISDN/Number', 'IMEI','Start ms','End ms',"Dur.(s)"]
         quantitative_df = self.df.select_dtypes(include=[np.number])
         quantitative_df.drop(colums_ignored, axis=1, inplace=True)
         numerical_cols = quantitative_df.columns.tolist()

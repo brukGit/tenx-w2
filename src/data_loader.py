@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
-
+ 
 class DataLoader:
     """
     A class to load and clean data from a PostgreSQL database.
@@ -50,20 +50,24 @@ class DataLoader:
 
         # Placeholder for categorical data
         categorical_columns = [
-            'Bearer Id', 'Start', 'End', 'IMSI', 'MSISDN/Number', 'IMEI', 'Last Location Name', 
+            'IMSI', 'MSISDN/Number', 
             'Handset Type', 'Handset Manufacturer'
         ]
         
         df.dropna(subset=categorical_columns, inplace=True)
 
-            # Remove rows where 'Handset Type' or 'Handset Manufacturer' is 'undefined'
-        df = df[~df['Handset Type'].str.lower().eq('undefined')]
-        df = df[~df['Handset Manufacturer'].str.lower().eq('undefined')]
-    
+        # # Remove rows where 'Handset Type' or 'Handset Manufacturer' is 'undefined'
+        # df = df[~df['Handset Type'].str.lower().eq('undefined')]
+        # df = df[~df['Handset Manufacturer'].str.lower().eq('undefined')]
+
+        df['Handset Type'] = df['Handset Type'].str.replace('undefined', 'Unknown', case=False)
+        df['Handset Manufacturer'] = df['Handset Manufacturer'].str.replace('undefined', 'Unknown', case=False)
+
+        df.rename(columns={'Dur. (ms)': 'Dur.(s)'}, inplace=True)
 
         # Mean imputation for numerical data
         mean_imputation_columns = [
-            "Start ms", "End ms", "Dur. (ms)", 
+            "Start ms", "End ms", "Dur.(s)", 
             "Avg RTT DL (ms)", "Avg RTT UL (ms)", "Avg Bearer TP DL (kbps)",
             "Avg Bearer TP UL (kbps)", "TCP DL Retrans. Vol (Bytes)",
             "TCP UL Retrans. Vol (Bytes)", "DL TP < 50 Kbps (%)",
