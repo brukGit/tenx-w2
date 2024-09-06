@@ -39,7 +39,7 @@ class UserOverview:
         plt.title('Top 10 Handset Types')
         plt.xlabel('Handset Type')
         plt.ylabel('Count')
-        plt.xticks(rotation=45)
+        plt.xticks(rotation=30)
         plt.tight_layout()
         plt.show()
 
@@ -98,7 +98,7 @@ class UserOverview:
         plt.tight_layout()
         plt.show()
 
-    def segment_and_compute_data(self):
+    def segment_and_compute_decile(self):
         """
         Segments the users into top five decile classes based on the total duration
         for all sessions and computes the total data (DL+UL) per decile class.
@@ -110,13 +110,13 @@ class UserOverview:
         self.df['Dur. (ms)'] = pd.to_numeric(self.df['Dur. (ms)'], errors='coerce')
         
         # Calculate total duration per user
-        user_durations = self.df.groupby('Bearer Id')['Dur. (ms)'].sum().reset_index()
+        user_durations = self.df.groupby('MSISDN/Number')['Dur. (ms)'].sum().reset_index()
         
         # Segment users into decile classes
         user_durations['Decile'] = pd.qcut(user_durations['Dur. (ms)'], 10, labels=False) + 1
         
         # Merge decile information back into the original DataFrame
-        df_with_decile = pd.merge(self.df, user_durations[['Bearer Id', 'Decile']], on='Bearer Id')
+        df_with_decile = pd.merge(self.df, user_durations[['MSISDN/Number', 'Decile']], on='MSISDN/Number')
         
         # Compute total DL and UL per decile class
         total_data_per_decile = df_with_decile.groupby('Decile').agg({
@@ -142,9 +142,10 @@ class UserOverview:
                         variance, standard deviation, and range) for each 
                         quantitative variable.
         """
-        # Select only quantitative variables (numeric types)
+        # Select only quantitative variables except ignored (numeric types)
+        colums_ignored = ['Bearer Id', 'IMSI', 'MSISDN/Number', 'IMEI']
         quantitative_df = self.df.select_dtypes(include=[np.number])
-        
+        quantitative_df.drop(colums_ignored, axis=1, inplace=True)
         # Compute dispersion parameters
         analysis_df = pd.DataFrame({
             'Mean': quantitative_df.mean(),
@@ -165,8 +166,10 @@ class UserOverview:
         Returns:
         None
         """
-        # Select only quantitative variables (numeric types)
+       # Select only quantitative variables except ignored (numeric types)
+        colums_ignored = ["Dur. (ms).1"]
         quantitative_df = self.df.select_dtypes(include=[np.number])
+        quantitative_df.drop(colums_ignored, axis=1, inplace=True)
         
         try:
             plt.style.use('dark_background')
@@ -198,6 +201,8 @@ class UserOverview:
 
             plt.tight_layout()
             plt.show()
+
+        return quantitative_df
 
     def bivariate_analysis(self):
         """
@@ -279,11 +284,12 @@ class UserOverview:
             dict: A dictionary containing PCA results, explained variance ratio, and loadings.
         """
         # Select numerical columns for PCA
-        numerical_cols = self.df.select_dtypes(include=[np.number]).columns.tolist()
+        colums_ignored = ['Bearer Id', 'IMSI', 'MSISDN/Number', 'IMEI','Start ms','End ms',"Dur. (ms).1"]
+        quantitative_df = self.df.select_dtypes(include=[np.number])
+        quantitative_df.drop(colums_ignored, axis=1, inplace=True)
+        numerical_cols = quantitative_df.columns.tolist()
         
-        # Remove any columns that are not suitable for PCA (like identifiers)
-        numerical_cols = [col for col in numerical_cols if col not in ['Bearer Id']]
-        
+           
         # Standardize the data
         scaler = StandardScaler()
         scaled_data = scaler.fit_transform(self.df[numerical_cols])

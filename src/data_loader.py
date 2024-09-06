@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 import os
 import pandas as pd
 import numpy as np
-import psycopg2
 from sqlalchemy import create_engine
 
 class DataLoader:
