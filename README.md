@@ -61,11 +61,11 @@ To perform the EDA, navigate to the notebooks/ directory and open the provided J
     jupyter notebook notebooks/user_engagement.ipynb
    
 
-### Running the Notebooks
+### Running the scripts
 You can use the script 'user_analysis.py' inside scripts directory to run all scripts located in 'src/' directory. Just change directory to scripts and executed the script inside. 
     ```bash
     cd scripts
-    python run user_analysis.py
+    python user_analysis.py
 
 ### Running Tests
 If you want to run unit tests to ensure that the analysis classes and functions work as expected, run the following command in the root directory:

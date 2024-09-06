@@ -10,7 +10,7 @@ The objective is to provide the client a report to analyse opportunities for gro
 You can use the script 'user_analysis.py' inside scripts directory to run all scripts located in 'src/' directory. Just change directory to scripts and executed the script inside. 
     ```bash
     cd scripts
-    python run user_analysis.py
+    python user_analysis.py
 
 
 ## Contributing
