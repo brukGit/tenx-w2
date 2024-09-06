@@ -1,7 +1,9 @@
 
-# Telco dataset
+# The Story
 
-FNSPID (Financial News and Stock Price Integration Dataset), is a comprehensive financial dataset designed to enhance stock market predictions by combining quantitative and qualitative data.
+A client is interested in purchasing TellCo, an existing mobile service provider in the Republic of Pefkakia. TellCo’s current owners have been willing to share their financial information but have never employed anyone to look at the data that is generated automatically by their systems.
+
+The objective is to provide the client a report to analyse opportunities for growth and make a recommendation on whether TellCo is worth buying or selling.
 
 ## Table of Contents
 
@@ -20,12 +22,12 @@ To set up this project on your local machine, follow the steps below:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/brukGit/tenx-w2.git
+   git clone https://github.com/brukGit/tenx-w3.git
    cd notebooks
 
 2. **Checkout branch task-1**:
   ```bash
-   git checkout task-2
+   git checkout task-1
 
 3. **Create a virtual environment (optional but recommended)**:
     ```bash
@@ -53,44 +55,50 @@ To set up this project on your local machine, follow the steps below:
 
 ## Usage
 ### Running the Notebooks
-To perform the EDA, navigate to the notebooks/ directory and open the provided Jupyter notebook. The notebook focuses on different aspects of the analysis, including descriptive statistics for stock indicators, time series analysis, and financial metrics analysis using TA-Lib and yfiance.
+To perform the EDA, navigate to the notebooks/ directory and open the provided Jupyter notebook. The notebook focuses analyzing both user overview and user engagement. 
     ```bash
-    jupyter notebook notebooks/anayze_stocks.ipynb
+    jupyter notebook notebooks/user_overview.ipynb
+    jupyter notebook notebooks/user_engagement.ipynb
    
 
 ### Running the Notebooks
-You can use the script 'analyze_stocks.py' inside scripts directory to run all scripts located in 'src/' directory. Just change directory to scripts and executed the script inside. 
+You can use the script 'user_analysis.py' inside scripts directory to run all scripts located in 'src/' directory. Just change directory to scripts and executed the script inside. 
     ```bash
     cd scripts
-    python run analyze_stocks.py
+    python run user_analysis.py
 
 ### Running Tests
-If you want to run unit tests to ensure that the functions work as expected (although, sorry, currently no test code is provided.):
+If you want to run unit tests to ensure that the analysis classes and functions work as expected, run the following command in the root directory:
     
 ```bash
     python -m unittest discover -s tests
 
-Use the sample csv data provided in sample_data directory for testing purposes.
-
 ### Raw datasets
-Add your datasets inside data directory.
+The raw datasets are fetched from a PostgreSQL.
 
 ## Exploratory Data Analysis (EDA) Overview
 The EDA conducted in this project covers several key areas:
 
-○	Indicator calculations for RSI, MA, MCDA, MCDA signal and MCDA histogram and visualizations from their summary statistics
-○	Indicators versus stock prices analysis with visualizations using heatmap and time series plots
-○	Correlation analysis of returns among companies (tickers) using time-series and correlation heatmaps
-○	Financial metrics analysis of volatility, Sharpe Ratio and Beta for all companies.
+○	Univariate & Bivariate Analysis: Explored central tendencies, dispersion, and relationships between session metrics (duration, traffic) and applications (DL+UL data).
+
+○	Outlier Detection: Identified and handled outliers in session durations and data volumes.
+
+○	Customer Engagement Metrics: Aggregated session frequency, duration, and total traffic per customer for insights into user behavior.
+
+○	Clustering: Used K-Means (with optimal clusters determined via the elbow method) to segment users by engagement levels.
+
+○	Dimensionality Reduction: Applied PCA to simplify analysis while retaining data variance.
+
+○	Application Engagement: Ranked top 10 users per application by data traffic.
+
+○	Top Application Analysis: Visualized top 3 applications by usage through bar charts.
 
 ## Data Cleaning
 Based on the initial analysis, the dataset was cleaned by handling missing values, removing duplicates, and ensuring correct data types.
 
 ## Dashboard
-Visit the dashboard built with streamlit on https:// ...
-or change your directory to app and run the following command.
-```bash
-    streamlit run main.py
+There is no dashboard to visit yet.
+
 ## Contributing
 Contributions to this project are welcome! If you have suggestions or improvements, feel free to open a pull request or issue on GitHub.
 
