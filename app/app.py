@@ -1,6 +1,6 @@
 import dash
 from dash import dcc, html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.express as px
 import pandas as pd
 from sqlalchemy import create_engine
@@ -14,7 +14,6 @@ load_dotenv()
 app = dash.Dash(__name__)
 server = app.server  # Needed for Render deployment
 
-
 # Determine the environment
 environment = os.environ.get('ENVIRONMENT', 'development')  # Default to development if not set
 
@@ -24,17 +23,36 @@ if environment == 'production':
 else:
     DATABASE_URL = os.environ.get('DB_URL_DEV')
 
-
 engine = create_engine(DATABASE_URL)
 
 # Function to load data from PostgreSQL
-def load_data():
-    query = "SELECT * FROM public.xdr_data"
+def load_data(metric, top_n):
+    if metric == 'throughput':
+        query = f"""
+        SELECT "Handset Type", "Avg Bearer TP DL (kbps)"
+        FROM public.xdr_data
+        WHERE "Handset Type" IN (
+            SELECT "Handset Type"
+            FROM public.xdr_data
+            GROUP BY "Handset Type"
+            ORDER BY COUNT(*) DESC
+            LIMIT {top_n}
+        )
+        """
+    else:  # TCP Retransmission
+        query = f"""
+        SELECT "Handset Type", "TCP DL Retrans. Vol (Bytes)"
+        FROM public.xdr_data
+        WHERE "Handset Type" IN (
+            SELECT "Handset Type"
+            FROM public.xdr_data
+            GROUP BY "Handset Type"
+            ORDER BY COUNT(*) DESC
+            LIMIT {top_n}
+        )
+        """
     df = pd.read_sql(query, engine)
     return df
-
-# Load initial data
-df = load_data()
 
 # Define the layout of the app
 app.layout = html.Div([
@@ -59,24 +77,29 @@ app.layout = html.Div([
         marks={i: str(i) for i in range(5, 21, 5)},
     ),
     
+    html.Button('Generate Graph', id='generate-button', n_clicks=0),
+    
     dcc.Graph(id='main-graph')
 ])
 
 # Callback to update the graph
 @app.callback(
     Output('main-graph', 'figure'),
-    [Input('metric-dropdown', 'value'),
-     Input('top-n-slider', 'value')]
+    [Input('generate-button', 'n_clicks')],
+    [State('metric-dropdown', 'value'),
+     State('top-n-slider', 'value')]
 )
-def update_graph(selected_metric, top_n):
-    top_handsets = df['Handset Type'].value_counts().nlargest(top_n).index.tolist()
-    filtered_df = df[df['Handset Type'].isin(top_handsets)]
+def update_graph(n_clicks, selected_metric, top_n):
+    if n_clicks == 0:
+        return {}  # Return empty figure on initial load
+    
+    df = load_data(selected_metric, top_n)
     
     if selected_metric == 'throughput':
-        fig = px.box(filtered_df, x='Handset Type', y='Avg Bearer TP DL (kbps)', 
+        fig = px.box(df, x='Handset Type', y='Avg Bearer TP DL (kbps)', 
                      title=f'Distribution of Average Downlink Throughput for Top {top_n} Handset Types')
     else:  # TCP Retransmission
-        fig = px.bar(filtered_df.groupby('Handset Type')['TCP DL Retrans. Vol (Bytes)'].mean().reset_index(), 
+        fig = px.bar(df.groupby('Handset Type')['TCP DL Retrans. Vol (Bytes)'].mean().reset_index(), 
                      x='Handset Type', y='TCP DL Retrans. Vol (Bytes)', 
                      title=f'Average Downlink TCP Retransmission Volume for Top {top_n} Handset Types')
     
@@ -85,4 +108,3 @@ def update_graph(selected_metric, top_n):
 
 if __name__ == '__main__':
     app.run_server(debug=True)
-    # app.run_server(debug=True, port=8050)
