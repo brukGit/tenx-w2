@@ -39,7 +39,7 @@ def load_data(metric, top_n):
             LIMIT {top_n}
         )
         """
-    else:  # TCP Retransmission
+    elif metric == 'tcp_retrans':
         query = f"""
         SELECT "Handset Type", "TCP DL Retrans. Vol (Bytes)"
         FROM public.xdr_data
@@ -51,6 +51,15 @@ def load_data(metric, top_n):
             LIMIT {top_n}
         )
         """
+    elif metric == 'eng_cluster':
+        query = f"""
+        SELECT "Dur.(s)", "Total DL (Bytes)","Total UL (Bytes)","MSISDN/Number"
+        FROM public.xdr_data
+        GROUP BY "MSISDN/Number"
+      
+        """
+    else:
+        print("do nothing")
     df = pd.read_sql(query, engine)
     return df
 
@@ -62,7 +71,8 @@ app.layout = html.Div([
         id='metric-dropdown',
         options=[
             {'label': 'Throughput', 'value': 'throughput'},
-            {'label': 'TCP Retransmission', 'value': 'tcp_retrans'}
+            {'label': 'TCP Retransmission', 'value': 'tcp_retrans'},
+            {'label': 'User Engagement Cluster', 'value': 'eng_cluster'}
         ],
         value='throughput',
         style={'width': '50%'}

@@ -48,9 +48,9 @@ class UserSatisfaction:
         Returns:
             float: The Euclidean distance between the point and the centroid.
         """
-        print(f"calculate_euclidean_distance called with point: {point}, centroid: {centroid}")
+        # print(f"calculate_euclidean_distance called with point: {point}, centroid: {centroid}")
         distance = np.linalg.norm(point - centroid)
-        print(f"Calculated distance: {distance}")
+        # print(f"Calculated distance: {distance}")
         return distance
 
     def assign_engagement_score(self):
@@ -61,15 +61,18 @@ class UserSatisfaction:
             pd.DataFrame: DataFrame with user IDs and their engagement scores.
         """
         clustered_data = self.engagement_model.classify_customers_by_engagement()
-        
-        # Debug: Print column names and data types
-        print("Columns in clustered_data:", clustered_data.columns)
-        print("Data types:", clustered_data.dtypes)
+        print("Engagement clustered_data index:", clustered_data.index)
+        print("Engagement clustered_data columns:", clustered_data.columns)
         
         least_engaged_cluster = clustered_data['Cluster'].min()
         least_engaged_centroid = clustered_data[clustered_data['Cluster'] == least_engaged_cluster].mean()
         
         engagement_features = ['Sessions Frequency', 'Session Duration', 'Total Traffic (Bytes)']
+        
+        # Ensure all features are present
+        for feature in engagement_features:
+            if feature not in clustered_data.columns:
+                raise ValueError(f"Feature '{feature}' not found in clustered_data")
         
         # Vectorized distance calculation
         points = clustered_data[engagement_features].values
@@ -79,25 +82,21 @@ class UserSatisfaction:
         differences = points - centroid
         engagement_scores = np.linalg.norm(differences, axis=1)
         
-        # Ensure MSISDN/Number is present and used correctly
-        if 'MSISDN/Number' not in clustered_data.columns:
-            print("MSISDN/Number not found in columns. Using index as MSISDN/Number.")
-            msisdn_numbers = clustered_data.index
-        else:
-            msisdn_numbers = clustered_data['MSISDN/Number']
+        # Normalize engagement scores to be between 0 and 1
+        min_score = np.min(engagement_scores)
+        max_score = np.max(engagement_scores)
+        normalized_scores = (engagement_scores - min_score) / (max_score - min_score)
         
         result = pd.DataFrame({
-            'MSISDN/Number': msisdn_numbers,
-            'Engagement Score': engagement_scores
+            'MSISDN/Number': clustered_data.index,
+            'Engagement Score': normalized_scores
         })
         
-        # Debug: Print first few rows of result and data types
-        print("First few rows of result DataFrame:")
+        print("First few rows of engagement scores:")
         print(result.head())
-        print("Result data types:", result.dtypes)
+        print("Engagement scores data types:", result.dtypes)
         
         return result
-
     def assign_experience_score(self):
         """
         Assign experience scores to each user based on their distance from the worst experience cluster.
@@ -106,23 +105,38 @@ class UserSatisfaction:
             pd.DataFrame: DataFrame with user IDs and their experience scores.
         """
         clustered_data = self.experience_model.perform_kmeans_clustering()
+        print("Experience clustered_data index:", clustered_data.index)
+        print("Experience clustered_data columns:", clustered_data.columns)
+        
         worst_experience_cluster = clustered_data['Cluster'].max()
-        # Select only numeric columns for centroid calculation
+        
         numeric_columns = ['TCP DL Retrans. Vol (Bytes)', 'TCP UL Retrans. Vol (Bytes)',
-                       'Avg RTT DL (ms)', 'Avg RTT UL (ms)',
-                       'Avg Bearer TP DL (kbps)', 'Avg Bearer TP UL (kbps)']
+                           'Avg RTT DL (ms)', 'Avg RTT UL (ms)',
+                           'Avg Bearer TP DL (kbps)', 'Avg Bearer TP UL (kbps)']
     
         worst_experience_centroid = clustered_data[clustered_data['Cluster'] == worst_experience_cluster][numeric_columns].mean()
         
         experience_scores = clustered_data.apply(
-        lambda row: self.calculate_euclidean_distance(row[numeric_columns], 
-                                                      worst_experience_centroid),
-        axis=1
-    )
+            lambda row: self.calculate_euclidean_distance(row[numeric_columns], 
+                                                          worst_experience_centroid),
+            axis=1
+        )
         
-        result = pd.DataFrame({'MSISDN/Number': clustered_data.index, 'Experience Score': experience_scores})
-        return result.reset_index(drop=True)
-
+        # Normalize experience scores to be between 0 and 1
+        min_score = experience_scores.min()
+        max_score = experience_scores.max()
+        normalized_scores = (experience_scores - min_score) / (max_score - min_score)
+        
+        result = pd.DataFrame({
+            'MSISDN/Number': clustered_data['MSISDN/Number'],  # Use the actual MSISDN/Number column
+            'Experience Score': normalized_scores
+        })
+        
+        print("First few rows of experience scores:")
+        print(result.head())
+        print("Experience scores data types:", result.dtypes)
+        
+        return result
     def calculate_satisfaction_scores(self):
         """
         Calculate satisfaction scores as the average of engagement and experience scores.
@@ -130,13 +144,22 @@ class UserSatisfaction:
         Returns:
             pd.DataFrame: DataFrame with user IDs, engagement scores, experience scores, and satisfaction scores.
         """
+        print("Original DataFrame index:", self.df.index)
+        print("Original DataFrame columns:", self.df.columns)
+        
         engagement_scores = self.assign_engagement_score()
         experience_scores = self.assign_experience_score()
         
         print("Engagement scores shape:", engagement_scores.shape)
         print("Experience scores shape:", experience_scores.shape)
         
-        # Merge the DataFrames
+        # Ensure MSISDN/Number is a column in both DataFrames
+        if 'MSISDN/Number' not in engagement_scores.columns:
+            engagement_scores['MSISDN/Number'] = engagement_scores.index
+        if 'MSISDN/Number' not in experience_scores.columns:
+            experience_scores['MSISDN/Number'] = experience_scores.index
+        
+        # Merge the DataFrames using MSISDN/Number
         satisfaction_scores = pd.merge(engagement_scores, experience_scores, on='MSISDN/Number', how='outer')
         
         print("Merged satisfaction scores shape:", satisfaction_scores.shape)
@@ -146,6 +169,7 @@ class UserSatisfaction:
         print("Data types of merged satisfaction scores:")
         print(satisfaction_scores.dtypes)
         
+        # Calculate satisfaction score
         satisfaction_scores['Satisfaction Score'] = (satisfaction_scores['Engagement Score'] + satisfaction_scores['Experience Score']) / 2
         
         self.satisfaction_scores = satisfaction_scores
