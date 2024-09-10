@@ -272,7 +272,7 @@ def update_traffic_plot(n_clicks):
     logger.debug(f"update_traffic_plot called with n_clicks: {n_clicks}")
     if n_clicks:
         try:
-            query = "SELECT * FROM public.xdr_data"
+            query = "SELECT * FROM public.xdr_data LIMIT 100"
             df = load_data(query)
             logger.debug(f"Data loaded, shape: {df.shape}")
             
@@ -302,7 +302,7 @@ def update_elbow_plot(n_clicks):
     if n_clicks:
         try:
             # Load data from the database
-            query = "SELECT * FROM public.xdr_data"
+            query = "SELECT * FROM public.xdr_data LIMIT 100"
             df = load_data(query)
             logger.debug(f"Data loaded, shape: {df.shape}")
             
