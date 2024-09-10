@@ -106,7 +106,7 @@ The EDA conducted in this project covers several key areas:
 Based on the initial analysis, the dataset was cleaned by handling missing values, removing duplicates, and ensuring correct data types.
 
 ## Dashboard
-There is no dashboard to visit yet.
+https://telco-tenx-w2.onrender.com/
 
 ## Contributing
 Contributions to this project are welcome! If you have suggestions or improvements, feel free to open a pull request or issue on GitHub.
