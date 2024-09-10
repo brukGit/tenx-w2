@@ -59,6 +59,8 @@ To perform the EDA, navigate to the notebooks/ directory and open the provided J
     ```bash
     jupyter notebook notebooks/user_overview.ipynb
     jupyter notebook notebooks/user_engagement.ipynb
+    jupyter notebook notebooks/user_experience.ipynb
+    jupyter notebook notebooks/user_satisfaction.ipynb
    
 
 ### Running the scripts
@@ -66,6 +68,13 @@ You can use the script 'user_analysis.py' inside scripts directory to run all sc
     ```bash
     cd scripts
     python user_analysis.py
+
+### Running the app locally
+Just change directory to 'app' and executed the script inside. 
+    ```bash
+    cd app
+    python main.py
+
 
 ### Running Tests
 If you want to run unit tests to ensure that the analysis classes and functions work as expected, run the following command in the root directory:

@@ -4,6 +4,13 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
+import logging
+import sys
+
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+logger.info('Logging initialized user engagement')
+
 class UserEngagement:
     """
     A class to analyze and aggregate user engagement metrics based on MSISDN (customer ID).
@@ -24,6 +31,10 @@ class UserEngagement:
         :param df: DataFrame containing columns like 'MSISDN/Number', 'Dur.(s)', 'Total DL (Bytes)', and 'Total UL (Bytes)'.
         """
         self.df = df
+        # logger.debug(f"UserEngagement initialized with DataFrame of shape: {self.df.shape}")
+        logger.info(f"UserEngagement initialized with DataFrame of shape: {self.df.shape}")
+        print(f"UserEngagement initialized with DataFrame of shape: {self.df.shape}")
+        # logger.info('This is an info message.')
 
     def aggregate_user_metrics(self):
         """
@@ -192,13 +203,7 @@ class UserEngagement:
             plt.show()
 
     def top_users_per_application(self):
-        """
-        Aggregates total traffic per application for each user and returns the top 10 most engaged users per application.
-        
-        :param df: DataFrame containing user engagement data.
-        :return: Dictionary containing the top 10 users per application based on total traffic (DL + UL).
-        """
-        # Applications and their respective DL and UL columns
+        logger.debug("Calculating top users per application")
         application_columns = {
             'Social Media': ['Social Media DL (Bytes)', 'Social Media UL (Bytes)'],
             'Google': ['Google DL (Bytes)', 'Google UL (Bytes)'],
@@ -209,21 +214,13 @@ class UserEngagement:
             'Other': ['Other DL (Bytes)', 'Other UL (Bytes)']
         }
 
-        # Initialize a dictionary to store top 10 users for each application
-        top_users_per_app = {}
-
+        app_usage = {}
         for app, cols in application_columns.items():
-            # Sum DL + UL traffic for each user (MSISDN/Number) per application
-            self.df[app + ' Total (Bytes)'] = self.df[cols[0]] + self.df[cols[1]]
+            total_traffic = self.df[cols[0]].sum() + self.df[cols[1]].sum()
+            app_usage[app] = total_traffic
+            logger.debug(f"{app}: {total_traffic}")
 
-            # Aggregate total traffic per user and sort by the top 10 most engaged users
-            top_users = self.df.groupby('MSISDN/Number')[app + ' Total (Bytes)'].sum().sort_values(ascending=False).head(10)
-
-            # Store the result in the dictionary
-            top_users_per_app[app] = top_users
-
-        return top_users_per_app
-    
+        return app_usage
 
     def plot_top_applications(self):
         """
@@ -266,45 +263,28 @@ class UserEngagement:
         plt.show()
 
     def k_means_optimal(self):
-        """
-        Determines the optimal number of clusters for K-Means clustering using the elbow method.
-        
-        :param metrics: List of column names representing engagement metrics for clustering.
-        :return: None
-        """
-        # Aggregate per customer the required metrics
+        logger.debug("Calculating optimal K for K-means clustering")
         user_metrics = self.df.groupby('MSISDN/Number').agg({
-            'Dur.(s)': 'sum',  # Total session duration
-            'Total DL (Bytes)': 'sum',  # Total download data
-            'Total UL (Bytes)': 'sum',  # Total upload data
-            'MSISDN/Number': 'count'  # Session frequency
+            'Dur.(s)': 'sum',
+            'Total DL (Bytes)': 'sum',
+            'Total UL (Bytes)': 'sum',
+            'MSISDN/Number': 'count'
         })
         
-        # Calculate total session traffic (DL + UL)
         user_metrics['Total Traffic (Bytes)'] = user_metrics['Total DL (Bytes)'] + user_metrics['Total UL (Bytes)']
         user_metrics.rename(columns={'MSISDN/Number': 'Sessions Frequency', 'Dur.(s)': 'Session Duration'}, inplace=True)
 
         metrics = ['Sessions Frequency', 'Session Duration', 'Total Traffic (Bytes)']
 
-        # Normalize the data
         scaler = StandardScaler()
         normalized_metrics = scaler.fit_transform(user_metrics[metrics])
 
-        # Calculate inertia for a range of k values
         inertias = []
-        k_range = range(1, 11)  # Testing k from 1 to 10
+        k_range = range(1, 11)
         for k in k_range:
             kmeans = KMeans(n_clusters=k, random_state=42)
             kmeans.fit(normalized_metrics)
             inertias.append(kmeans.inertia_)
+            logger.debug(f"K={k}, Inertia={kmeans.inertia_}")
 
-        # Plot the elbow curve
-        plt.figure(figsize=(8, 6))
-        plt.plot(k_range, inertias, marker='o')
-        plt.title('Elbow Method for Optimal k')
-        plt.xlabel('Number of clusters (k)')
-        plt.ylabel('Inertia')
-        plt.xticks(k_range)
-        plt.grid(True)
-        plt.show()
-
+        return k_range, inertias
