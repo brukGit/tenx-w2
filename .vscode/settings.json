@@ -18,7 +18,7 @@
         "**/venv": true // Exclude venv directory from the file explorer
     },
     "git.ignoreLimitWarning": true,
-    "workbench.colorTheme": "Default Light+", // Set your preferred theme
+    "workbench.colorTheme": "Visual Studio Dark", // Set your preferred theme
     "python.testing.pytestEnabled": true, // Enable pytest for testing
     "python.testing.unittestEnabled": false, // Disable unittest if not using it
     "python.testing.pytestArgs": [
