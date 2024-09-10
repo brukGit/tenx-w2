@@ -1,3 +1,7 @@
+
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
@@ -7,8 +11,23 @@ import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
 import os
+import sys
 from dotenv import load_dotenv
+from importlib import reload
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+logger.info('Logging initialized app.js')
+
+# Define the path to the src directory
+src_dir = os.path.abspath(os.path.join(os.getcwd(), '..', 'src'))
+sys.path.insert(0, src_dir)
+
+import user_engagement
+reload(user_engagement)
+from user_engagement import UserEngagement
 # Load environment variables
 load_dotenv()
 
@@ -31,16 +50,11 @@ engine = create_engine(DATABASE_URL)
 
 # Function to load data from PostgreSQL
 def load_data(query):
-    """
-    Load data from PostgreSQL database using the provided query.
-    
-    Args:
-        query (str): SQL query to execute
-    
-    Returns:
-        pd.DataFrame: Result of the query as a pandas DataFrame
-    """
-    return pd.read_sql(query, engine)
+    try:
+        return pd.read_sql(query, engine)
+    except Exception as e:
+        logger.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()
 
 # Styling
 BACKGROUND_STYLE = {
@@ -78,7 +92,7 @@ def create_nav_bar(active_page):
 # Define the layout for the overview page
 overview_layout = html.Div([
     html.Div([
-        html.H1("Tellco Telecom Overview Dashboard", style={'textAlign': 'center'}),
+        html.H1("Tellco User Analysis Dashboard", style={'textAlign': 'center'}),
     ], style=HEADER_STYLE),
     create_nav_bar('overview'),
     html.Div([
@@ -110,12 +124,33 @@ overview_layout = html.Div([
 ], style=CONTENT_STYLE)
 
 # Define the layout for the user engagement page
+
+# Update user engagement layout to include traffic plot and elbow plot with generate buttons
 engagement_layout = html.Div([
     html.Div([
         html.H1("User Engagement Dashboard", style={'textAlign': 'center'}),
     ], style=HEADER_STYLE),
     create_nav_bar('engagement'),
-   
+
+    # New traffic plot section
+    html.Div([
+        html.H3("Total Traffic by Application"),
+        dcc.Loading(
+            id="loading-traffic",
+            type="default",
+            children=[html.Button("Generate Plot", id="btn-traffic"), dcc.Graph(id='traffic-plot')]
+        )
+    ]),
+
+    # New elbow plot section
+    html.Div([
+        html.H3("K-Means Elbow Plot for Optimal Clusters"),
+        dcc.Loading(
+            id="loading-elbow",
+            type="default",
+            children=[html.Button("Generate Plot", id="btn-elbow"), dcc.Graph(id='elbow-plot')]
+        )
+    ])
 ], style=CONTENT_STYLE)
 
 # Define the layout for the user experience page
@@ -227,4 +262,71 @@ def create_nav_bar(active_page):
     ], style={'display': 'flex', 'justifyContent': 'space-around', 'padding': '1rem', 'backgroundColor': '#333', 'borderRadius': '0 0 8px 8px'})
 
 if __name__ == '__main__':
+    app.run_server(debug=True)
+
+@app.callback(
+    Output('traffic-plot', 'figure'),
+    Input('btn-traffic', 'n_clicks')
+)
+def update_traffic_plot(n_clicks):
+    logger.debug(f"update_traffic_plot called with n_clicks: {n_clicks}")
+    if n_clicks:
+        try:
+            query = "SELECT * FROM public.xdr_data"
+            df = load_data(query)
+            logger.debug(f"Data loaded, shape: {df.shape}")
+            
+            user_engagement = UserEngagement(df)
+            logger.debug("UserEngagement instance created")
+            
+            app_usage = user_engagement.top_users_per_application()
+            logger.debug(f"App usage data: {app_usage}")
+            
+            app_usage_df = pd.DataFrame(list(app_usage.items()), columns=['Application', 'Total Traffic (Bytes)'])
+            
+            fig = px.bar(app_usage_df, x='Application', y='Total Traffic (Bytes)', 
+                         title='Total Traffic by Application')
+            logger.debug("Plot created successfully")
+            return fig
+        except Exception as e:
+            logger.error(f"Error in update_traffic_plot: {str(e)}")
+            return go.Figure()
+
+    return dash.no_update
+@app.callback(
+    Output('elbow-plot', 'figure'),
+    Input('btn-elbow', 'n_clicks')
+)
+def update_elbow_plot(n_clicks):
+    logger.debug(f"update_elbow_plot called with n_clicks: {n_clicks}")
+    if n_clicks:
+        try:
+            # Load data from the database
+            query = "SELECT * FROM public.xdr_data"
+            df = load_data(query)
+            logger.debug(f"Data loaded, shape: {df.shape}")
+            
+            # Create UserEngagement instance
+            user_engagement = UserEngagement(df)
+            
+            # Get the elbow plot data
+            k_range, inertias = user_engagement.k_means_optimal()
+            logger.debug(f"Elbow plot data: k_range={k_range}, inertias={inertias}")
+            
+            # Create the plot using Plotly
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=list(k_range), y=inertias, mode='lines+markers'))
+            fig.update_layout(title='Elbow Method for Optimal k',
+                              xaxis_title='Number of clusters (k)',
+                              yaxis_title='Inertia')
+            logger.debug("Plot created successfully")
+            return fig
+        except Exception as e:
+            logger.error(f"Error in update_elbow_plot: {str(e)}")
+            return go.Figure()
+
+    return dash.no_update
+if __name__ == '__main__':  
+
+    print("Starting the application...")
     app.run_server(debug=True)
