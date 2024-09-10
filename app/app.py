@@ -25,9 +25,9 @@ logger.info('Logging initialized app.js')
 src_dir = os.path.abspath(os.path.join(os.getcwd(), '..', 'src'))
 sys.path.insert(0, src_dir)
 
-import user_engagement
-reload(user_engagement)
-from user_engagement import UserEngagement
+import src.user_engagement
+reload(src.user_engagement)
+from src.user_engagement import UserEngagement
 # Load environment variables
 load_dotenv()
 
