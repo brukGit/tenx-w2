@@ -1,7 +1,3 @@
-
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
@@ -11,23 +7,8 @@ import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
 import os
-import sys
 from dotenv import load_dotenv
-from importlib import reload
 
-import logging
-
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-logger.info('Logging initialized app.js')
-
-# Define the path to the src directory
-src_dir = os.path.abspath(os.path.join(os.getcwd(), '..', 'src'))
-sys.path.insert(0, src_dir)
-
-import user_engagement
-reload(user_engagement)
-from user_engagement import UserEngagement
 # Load environment variables
 load_dotenv()
 
@@ -50,11 +31,16 @@ engine = create_engine(DATABASE_URL)
 
 # Function to load data from PostgreSQL
 def load_data(query):
-    try:
-        return pd.read_sql(query, engine)
-    except Exception as e:
-        logger.error(f"Error loading data: {str(e)}")
-        return pd.DataFrame()
+    """
+    Load data from PostgreSQL database using the provided query.
+    
+    Args:
+        query (str): SQL query to execute
+    
+    Returns:
+        pd.DataFrame: Result of the query as a pandas DataFrame
+    """
+    return pd.read_sql(query, engine)
 
 # Styling
 BACKGROUND_STYLE = {
@@ -92,7 +78,7 @@ def create_nav_bar(active_page):
 # Define the layout for the overview page
 overview_layout = html.Div([
     html.Div([
-        html.H1("Tellco User Analysis Dashboard", style={'textAlign': 'center'}),
+        html.H1("Tellco Telecom Overview Dashboard", style={'textAlign': 'center'}),
     ], style=HEADER_STYLE),
     create_nav_bar('overview'),
     html.Div([
@@ -124,31 +110,35 @@ overview_layout = html.Div([
 ], style=CONTENT_STYLE)
 
 # Define the layout for the user engagement page
-
-# Update user engagement layout to include traffic plot and elbow plot with generate buttons
 engagement_layout = html.Div([
     html.Div([
         html.H1("User Engagement Dashboard", style={'textAlign': 'center'}),
     ], style=HEADER_STYLE),
     create_nav_bar('engagement'),
-
-    # New traffic plot section
     html.Div([
-        html.H3("Total Traffic by Application"),
-        dcc.Loading(
-            id="loading-traffic",
-            type="default",
-            children=[html.Button("Generate Plot", id="btn-traffic"), dcc.Graph(id='traffic-plot')]
-        )
+        html.Div([
+            html.H3("User Engagement Clusters"),
+            dcc.Loading(
+                id="loading-engagement-clusters",
+                type="default",
+                children=[html.Button("Generate Plot", id="btn-engagement-clusters"), dcc.Graph(id='engagement-clusters-graph')]
+            )
+        ], style={'width': '48%', 'display': 'inline-block'}),
+        html.Div([
+            html.H3("Top Engaged Users"),
+            dcc.Loading(
+                id="loading-top-engaged-users",
+                type="default",
+                children=[html.Button("Generate Plot", id="btn-top-engaged-users"), dcc.Graph(id='top-engaged-users-graph')]
+            )
+        ], style={'width': '48%', 'float': 'right', 'display': 'inline-block'}),
     ]),
-
-    # New elbow plot section
     html.Div([
-        html.H3("K-Means Elbow Plot for Optimal Clusters"),
+        html.H3("User Engagement Over Time"),
         dcc.Loading(
-            id="loading-elbow",
+            id="loading-engagement-time",
             type="default",
-            children=[html.Button("Generate Plot", id="btn-elbow"), dcc.Graph(id='elbow-plot')]
+            children=[html.Button("Generate Plot", id="btn-engagement-time"), dcc.Graph(id='engagement-time-graph')]
         )
     ])
 ], style=CONTENT_STYLE)
@@ -159,7 +149,32 @@ experience_layout = html.Div([
         html.H1("User Experience Dashboard", style={'textAlign': 'center'}),
     ], style=HEADER_STYLE),
     create_nav_bar('experience'),
-   
+    html.Div([
+        html.Div([
+            html.H3("Throughput by Handset Type"),
+            dcc.Loading(
+                id="loading-throughput",
+                type="default",
+                children=[html.Button("Generate Plot", id="btn-throughput"), dcc.Graph(id='throughput-graph')]
+            )
+        ], style={'width': '48%', 'display': 'inline-block'}),
+        html.Div([
+            html.H3("TCP Retransmission by Handset Type"),
+            dcc.Loading(
+                id="loading-tcp-retrans",
+                type="default",
+                children=[html.Button("Generate Plot", id="btn-tcp-retrans"), dcc.Graph(id='tcp-retrans-graph')]
+            )
+        ], style={'width': '48%', 'float': 'right', 'display': 'inline-block'}),
+    ]),
+    html.Div([
+        html.H3("Network Latency Over Time"),
+        dcc.Loading(
+            id="loading-latency-time",
+            type="default",
+            children=[html.Button("Generate Plot", id="btn-latency-time"), dcc.Graph(id='latency-time-graph')]
+        )
+    ])
 ], style=CONTENT_STYLE)
 
 # Define the layout for the user satisfaction page
@@ -168,7 +183,32 @@ satisfaction_layout = html.Div([
         html.H1("User Satisfaction Dashboard", style={'textAlign': 'center'}),
     ], style=HEADER_STYLE),
     create_nav_bar('satisfaction'),
-   
+    html.Div([
+        html.Div([
+            html.H3("Satisfaction Score Distribution"),
+            dcc.Loading(
+                id="loading-satisfaction-distribution",
+                type="default",
+                children=[html.Button("Generate Plot", id="btn-satisfaction-distribution"), dcc.Graph(id='satisfaction-distribution-graph')]
+            )
+        ], style={'width': '48%', 'display': 'inline-block'}),
+        html.Div([
+            html.H3("Satisfaction vs Engagement and Experience"),
+            dcc.Loading(
+                id="loading-satisfaction-scatter",
+                type="default",
+                children=[html.Button("Generate Plot", id="btn-satisfaction-scatter"), dcc.Graph(id='satisfaction-scatter-graph')]
+            )
+        ], style={'width': '48%', 'float': 'right', 'display': 'inline-block'}),
+    ]),
+    html.Div([
+        html.H3("Top Satisfied Customers"),
+        dcc.Loading(
+            id="loading-top-satisfied",
+            type="default",
+            children=[html.Button("Generate Table", id="btn-top-satisfied"), html.Div(id='top-satisfied-table')]
+        )
+    ])
 ], style=CONTENT_STYLE)
 
 # Define the layout of the app
@@ -252,6 +292,151 @@ def update_overview_graphs(btn1, btn2, btn3):
     
     return fig_handsets, fig_manufacturers, fig_data_usage
 
+# Callback for user engagement page graphs
+@app.callback(
+    [Output('engagement-clusters-graph', 'figure'),
+     Output('top-engaged-users-graph', 'figure'),
+     Output('engagement-time-graph', 'figure')],
+    [Input('btn-engagement-clusters', 'n_clicks'),
+     Input('btn-top-engaged-users', 'n_clicks'),
+     Input('btn-engagement-time', 'n_clicks')]
+)
+def update_engagement_graphs(btn1, btn2, btn3):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return [go.Figure()] * 3
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if button_id == "btn-engagement-clusters":
+        query_clusters = """
+        SELECT "Sessions Frequency", "Total Traffic (Bytes)", "Cluster"
+        FROM public.user_clusters
+        LIMIT 1000
+        """
+        df_clusters = load_data(query_clusters)
+        fig_clusters = px.scatter(df_clusters, x='Sessions Frequency', y='Total Traffic (Bytes)', 
+                                  color='Cluster', title='User Engagement Clusters')
+        fig_clusters.update_layout(template='plotly_dark')
+    else:
+        fig_clusters = go.Figure()
+    
+    if button_id == "btn-top-engaged-users":
+        query_top_engaged = """
+        SELECT "MSISDN/Number", "Engagement Score"
+        FROM public.user_satisfaction_scores
+        ORDER BY "Engagement Score" DESC
+        LIMIT 10
+        """
+        df_top_engaged = load_data(query_top_engaged)
+        fig_top_engaged = px.bar(df_top_engaged, x='MSISDN/Number', y='Engagement Score', 
+                                 title='Top 10 Engaged Users')
+        fig_top_engaged.update_layout(template='plotly_dark')
+    else:
+        fig_top_engaged = go.Figure()
+    
+    if button_id == "btn-engagement-time":
+        query_engagement_time = """
+        SELECT DATE_TRUNC('day', "Start Time") as date, AVG("Engagement Score") as avg_engagement
+        FROM public.user_satisfaction_scores
+        GROUP BY DATE_TRUNC('day', "Start Time")
+        ORDER BY date
+        """
+        df_engagement_time = load_data(query_engagement_time)
+        fig_engagement_time = px.line(df_engagement_time, x='date', y='avg_engagement',
+                                      title='Average User Engagement Over Time')
+        fig_engagement_time.update_layout(template='plotly_dark')
+    else:
+        fig_engagement_time = go.Figure()
+    
+    return fig_clusters, fig_top_engaged, fig_engagement_time
+
+# Update the engagement layout
+engagement_layout = html.Div([
+    html.Div([
+        html.H1("User Engagement Dashboard", style={'textAlign': 'center', 'color': 'white'}),
+    ], style=HEADER_STYLE),
+    create_nav_bar('engagement'),
+    html.Div([
+        html.Div([
+            html.H3("User Engagement Clusters", style={'color': 'white'}),
+            dcc.Loading(
+                id="loading-engagement-clusters",
+                type="circle",
+                children=[
+                    html.Button("Generate Plot", id="btn-engagement-clusters", className='btn btn-primary'),
+                    dcc.Graph(id='engagement-clusters-graph')
+                ]
+            )
+        ], style={'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top'}),
+        html.Div([
+            html.H3("Top Engaged Users", style={'color': 'white'}),
+            dcc.Loading(
+                id="loading-top-engaged-users",
+                type="circle",
+                children=[
+                    html.Button("Generate Plot", id="btn-top-engaged-users", className='btn btn-primary'),
+                    dcc.Graph(id='top-engaged-users-graph')
+                ]
+            )
+        ], style={'width': '48%', 'float': 'right', 'display': 'inline-block', 'verticalAlign': 'top'}),
+    ]),
+    html.Div([
+        html.H3("User Engagement Over Time", style={'color': 'white'}),
+        dcc.Loading(
+            id="loading-engagement-time",
+            type="circle",
+            children=[
+                html.Button("Generate Plot", id="btn-engagement-time", className='btn btn-primary'),
+                dcc.Graph(id='engagement-time-graph')
+            ]
+        )
+    ]),
+    html.Div([
+        html.H3("Top Satisfied Customers", style={'color': 'white'}),
+        dcc.Loading(
+            id="loading-top-satisfied",
+            type="circle",
+            children=[
+                html.Button("Show Top Satisfied Customers", id="btn-top-satisfied", className='btn btn-primary'),
+                html.Div(id='top-satisfied-table')
+            ]
+        )
+    ])
+], style=CONTENT_STYLE)
+
+# Callback for top satisfied customers
+@app.callback(
+    Output('top-satisfied-table', 'children'),
+    [Input('btn-top-satisfied', 'n_clicks')]
+)
+def update_top_satisfied(n_clicks):
+    if n_clicks is None:
+        return []
+    
+    query = """
+    SELECT "MSISDN/Number", "Satisfaction Score"
+    FROM public.user_satisfaction_scores
+    ORDER BY "Satisfaction Score" DESC
+    LIMIT 10
+    """
+    df = load_data(query)
+    
+    return dash_table.DataTable(
+        data=df.to_dict('records'),
+        columns=[{'name': i, 'id': i} for i in df.columns],
+        style_table={'overflowX': 'auto'},
+        style_cell={
+            'backgroundColor': 'rgb(50, 50, 50)',
+            'color': 'white',
+            'textAlign': 'left'
+        },
+        style_header={
+            'backgroundColor': 'rgb(30, 30, 30)',
+            'fontWeight': 'bold'
+        }
+    )
+
 # Update the navigation bar styling
 def create_nav_bar(active_page):
     return html.Div([
@@ -261,72 +446,34 @@ def create_nav_bar(active_page):
         dcc.Link('User Satisfaction', href='/satisfaction', className='nav-link', style={'color': 'white' if active_page == 'satisfaction' else 'lightgray', 'backgroundColor': '#007bff' if active_page == 'satisfaction' else 'transparent'})
     ], style={'display': 'flex', 'justifyContent': 'space-around', 'padding': '1rem', 'backgroundColor': '#333', 'borderRadius': '0 0 8px 8px'})
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+# Update the overall styling
+BACKGROUND_STYLE = {
+    'backgroundColor': '#1e1e1e',
+    'fontFamily': 'Roboto, sans-serif',
+    'padding': '20px',
+    'color': 'white'
+}
 
-@app.callback(
-    Output('traffic-plot', 'figure'),
-    Input('btn-traffic', 'n_clicks')
-)
-def update_traffic_plot(n_clicks):
-    logger.debug(f"update_traffic_plot called with n_clicks: {n_clicks}")
-    if n_clicks:
-        try:
-            query = "SELECT * FROM public.xdr_data LIMIT 100"
-            df = load_data(query)
-            logger.debug(f"Data loaded, shape: {df.shape}")
-            
-            user_engagement = UserEngagement(df)
-            logger.debug("UserEngagement instance created")
-            
-            app_usage = user_engagement.top_users_per_application()
-            logger.debug(f"App usage data: {app_usage}")
-            
-            app_usage_df = pd.DataFrame(list(app_usage.items()), columns=['Application', 'Total Traffic (Bytes)'])
-            
-            fig = px.bar(app_usage_df, x='Application', y='Total Traffic (Bytes)', 
-                         title='Total Traffic by Application')
-            logger.debug("Plot created successfully")
-            return fig
-        except Exception as e:
-            logger.error(f"Error in update_traffic_plot: {str(e)}")
-            return go.Figure()
+CONTENT_STYLE = {
+    'margin-left': '2rem',
+    'margin-right': '2rem',
+    'padding': '2rem 1rem',
+    'backgroundColor': '#2c2c2c',
+    'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)',
+    'borderRadius': '8px',
+}
 
-    return dash.no_update
-@app.callback(
-    Output('elbow-plot', 'figure'),
-    Input('btn-elbow', 'n_clicks')
-)
-def update_elbow_plot(n_clicks):
-    logger.debug(f"update_elbow_plot called with n_clicks: {n_clicks}")
-    if n_clicks:
-        try:
-            # Load data from the database
-            query = "SELECT * FROM public.xdr_data LIMIT 100"
-            df = load_data(query)
-            logger.debug(f"Data loaded, shape: {df.shape}")
-            
-            # Create UserEngagement instance
-            user_engagement = UserEngagement(df)
-            
-            # Get the elbow plot data
-            k_range, inertias = user_engagement.k_means_optimal()
-            logger.debug(f"Elbow plot data: k_range={k_range}, inertias={inertias}")
-            
-            # Create the plot using Plotly
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=list(k_range), y=inertias, mode='lines+markers'))
-            fig.update_layout(title='Elbow Method for Optimal k',
-                              xaxis_title='Number of clusters (k)',
-                              yaxis_title='Inertia')
-            logger.debug("Plot created successfully")
-            return fig
-        except Exception as e:
-            logger.error(f"Error in update_elbow_plot: {str(e)}")
-            return go.Figure()
+HEADER_STYLE = {
+    'backgroundColor': '#4a4a4a',
+    'padding': '1rem',
+    'color': 'white',
+    'borderRadius': '8px 8px 0 0',
+    'marginBottom': '1rem',
+    'boxShadow': '0 2px 4px rgba(0, 0, 0, 0.1)',
+}
 
-    return dash.no_update
-if __name__ == '__main__':  
-
-    print("Starting the application...")
-    app.run_server(debug=True)
+# Add this to your app.layout
+app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
+    html.Div(id='page-content')
+], style=BACKGROUND_STYLE)
