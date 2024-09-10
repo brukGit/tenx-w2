@@ -177,7 +177,7 @@ class UserOverview:
         quantitative_df = self.df[columns_picked]
         
         try:
-            plt.style.use('dark_background')
+            plt.style.use('default')
         except FileNotFoundError:
             plt.style.use('seaborn')
         
